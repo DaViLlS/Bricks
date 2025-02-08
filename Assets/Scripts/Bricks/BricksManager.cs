@@ -1,5 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Configuration.Brick;
+using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 namespace Bricks
 {
@@ -9,8 +14,16 @@ namespace Bricks
         [SerializeField] private Transform bricksListContainer;
         [SerializeField] private Transform bricksContainer;
         [SerializeField] private ScrollRect scrollRect;
+        [SerializeField] private List<BrickColorPair> brickColorPairs;
         
+        private BrickConfiguration _brickConfiguration;
         private Brick[] _bricks;
+
+        [Inject]
+        public void Construct(BrickConfiguration brickConfiguration)
+        {
+            _brickConfiguration = brickConfiguration;
+        }
 
         private void Awake()
         {
@@ -19,12 +32,21 @@ namespace Bricks
 
         public void Initialize()
         {
-            _bricks = new Brick[9];
+            _bricks = new Brick[_brickConfiguration.Bricks.Count];
 
             for (int i = 0; i < _bricks.Length; i++)
             {
+                var brickColor = _brickConfiguration.Bricks[i];
+                var brickSpriteColorPair = brickColorPairs.FirstOrDefault(x => x.brickColor == brickColor);
+
+                if (brickSpriteColorPair == null)
+                {
+                    Debug.LogError($"Brick Color {brickColor} not found");
+                    continue;
+                }
+                
                 _bricks[i] = Instantiate(brickPrefab, bricksListContainer);
-                _bricks[i].Setup(scrollRect);
+                _bricks[i].Setup(brickSpriteColorPair.brickSprite, scrollRect);
                 _bricks[i].OnDragBegan += OnBrickBeginDrag;
             }
         }
@@ -33,5 +55,12 @@ namespace Bricks
         {
             brick.transform.SetParent(bricksContainer);
         }
+    }
+
+    [Serializable]
+    public class BrickColorPair
+    {
+        public BrickColor brickColor;
+        public Sprite brickSprite;
     }
 }

@@ -17,9 +17,9 @@ namespace Bricks
         private bool _isDraggingBegan;
         private bool _canDrag;
 
-        public void Setup(/*Sprite brickSprite, */ScrollRect scrollRect)
+        public void Setup(Sprite brickSprite, ScrollRect scrollRect)
         {
-            //brickImage.sprite = brickSprite;
+            brickImage.sprite = brickSprite;
             _parentScrollRect = scrollRect;
         }
         
