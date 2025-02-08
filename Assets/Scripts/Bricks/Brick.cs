@@ -5,12 +5,11 @@ using UnityEngine.UI;
 
 namespace Bricks
 {
-    public class Brick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler, IEndDragHandler
+    public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         public event Action<Brick> OnDragBegan;
         
         [SerializeField] private Image brickImage;
-        [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private float dragThresholdY;
 
         private float _startPositionY;
@@ -22,11 +21,10 @@ namespace Bricks
             brickImage.sprite = brickSprite;
         }
         
-        public void OnPointerDown(PointerEventData eventData)
+        public void OnBeginDrag(PointerEventData eventData)
         {
             _startPositionY = Input.mousePosition.y;
-            _isDraggingBegan = true;
-            canvasGroup.blocksRaycasts = false;
+            _isDraggingBegan = true;  
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -39,13 +37,6 @@ namespace Bricks
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            canvasGroup.blocksRaycasts = true;
-            _isDraggingBegan = false;
-        }
-        
-        public void OnPointerUp(PointerEventData eventData)
-        {
-            canvasGroup.blocksRaycasts = true;
             _isDraggingBegan = false;
         }
 
@@ -53,8 +44,6 @@ namespace Bricks
         {
             if (!_isDraggingBegan)
                 return;
-
-            Debug.Log($"waka waka {Input.mousePosition.y - _startPositionY}");
             
             if (Input.mousePosition.y - _startPositionY > dragThresholdY)
             {

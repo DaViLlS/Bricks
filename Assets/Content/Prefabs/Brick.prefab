@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 583919428497267221}
   - component: {fileID: 8472623908684981939}
   - component: {fileID: 7211641300100500727}
-  - component: {fileID: 1094257928537316307}
   m_Layer: 5
   m_Name: Brick
   m_TagString: Untagged
@@ -61,8 +60,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickImage: {fileID: 7211641300100500727}
-  canvasGroup: {fileID: 1094257928537316307}
-  dragThresholdY: 5
+  canvasGroup: {fileID: 0}
+  dragThresholdY: 50
 --- !u!114 &8472623908684981939
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -113,15 +112,3 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!225 &1094257928537316307
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7484573177058148135}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
