@@ -5,32 +5,47 @@ using UnityEngine.UI;
 
 namespace Bricks
 {
-    public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
     {
         public event Action<Brick> OnDragBegan;
         
         [SerializeField] private Image brickImage;
         [SerializeField] private float dragThresholdY;
 
+        private ScrollRect _parentScrollRect;
         private float _startPositionY;
         private bool _isDraggingBegan;
         private bool _canDrag;
 
-        public void Setup(Sprite brickSprite)
+        public void Setup(/*Sprite brickSprite, */ScrollRect scrollRect)
         {
-            brickImage.sprite = brickSprite;
+            //brickImage.sprite = brickSprite;
+            _parentScrollRect = scrollRect;
+        }
+        
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _parentScrollRect.OnBeginDrag(eventData);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            _parentScrollRect.OnEndDrag(eventData);
         }
         
         public void OnBeginDrag(PointerEventData eventData)
         {
             _startPositionY = Input.mousePosition.y;
-            _isDraggingBegan = true;  
+            _isDraggingBegan = true;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
             if (!_canDrag)
+            {
+                _parentScrollRect.OnDrag(eventData);
                 return;
+            }
             
             transform.position = eventData.position;
         }

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 namespace Bricks
 {
@@ -7,6 +8,7 @@ namespace Bricks
         [SerializeField] private Brick brickPrefab;
         [SerializeField] private Transform bricksListContainer;
         [SerializeField] private Transform bricksContainer;
+        [SerializeField] private ScrollRect scrollRect;
         
         private Brick[] _bricks;
 
@@ -22,6 +24,7 @@ namespace Bricks
             for (int i = 0; i < _bricks.Length; i++)
             {
                 _bricks[i] = Instantiate(brickPrefab, bricksListContainer);
+                _bricks[i].Setup(scrollRect);
                 _bricks[i].OnDragBegan += OnBrickBeginDrag;
             }
         }

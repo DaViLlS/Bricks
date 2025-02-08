@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace _Project.Development.Core.StateMachine
+namespace Core.StateMachine
 {
     public abstract class StateMachine : MonoBehaviour
     {

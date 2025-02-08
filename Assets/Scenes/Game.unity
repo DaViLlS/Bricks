@@ -831,6 +831,7 @@ MonoBehaviour:
   brickPrefab: {fileID: 583919428497267221, guid: 5d42ddcd000ff904c9c82b3ebdcec701, type: 3}
   bricksListContainer: {fileID: 989550393}
   bricksContainer: {fileID: 1333291597}
+  scrollRect: {fileID: 2019882090}
 --- !u!4 &1819110091
 Transform:
   m_ObjectHideFlags: 0

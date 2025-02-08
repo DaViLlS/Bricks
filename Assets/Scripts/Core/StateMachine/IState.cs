@@ -1,4 +1,4 @@
-namespace _Project.Development.Core.StateMachine
+namespace Core.StateMachine
 {
     public interface IState
     {
