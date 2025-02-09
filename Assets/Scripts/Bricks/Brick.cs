@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -11,16 +12,20 @@ namespace Bricks
         
         [SerializeField] private Image brickImage;
         [SerializeField] private float dragThresholdY;
+        [SerializeField] private RectTransform brickRect;
 
         private ScrollRect _parentScrollRect;
         private float _startPositionY;
         private bool _isDraggingBegan;
         private bool _canDrag;
+        
+        private Transform _foundationTransform;
 
-        public void Setup(Sprite brickSprite, ScrollRect scrollRect)
+        public void Setup(Sprite brickSprite, ScrollRect scrollRect, Transform foundationTransform)
         {
             brickImage.sprite = brickSprite;
             _parentScrollRect = scrollRect;
+            _foundationTransform = foundationTransform;
         }
         
         public void OnPointerDown(PointerEventData eventData)
@@ -31,6 +36,7 @@ namespace Bricks
         public void OnPointerUp(PointerEventData eventData)
         {
             _parentScrollRect.OnEndDrag(eventData);
+            brickRect.DOMoveY(_foundationTransform.position.y + 20, 0.2f);
         }
         
         public void OnBeginDrag(PointerEventData eventData)

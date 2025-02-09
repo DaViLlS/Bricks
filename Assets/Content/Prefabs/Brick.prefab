@@ -60,8 +60,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickImage: {fileID: 7211641300100500727}
-  canvasGroup: {fileID: 0}
   dragThresholdY: 50
+  brickRect: {fileID: 3885618890249204631}
 --- !u!114 &8472623908684981939
 MonoBehaviour:
   m_ObjectHideFlags: 0
