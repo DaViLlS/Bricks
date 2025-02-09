@@ -1,42 +1,46 @@
 using System;
-using DG.Tweening;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Bricks
 {
-    public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
+    public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
         public event Action<Brick> OnDragBegan;
+        public event Action<Brick> PointerUp;
         
         [SerializeField] private Image brickImage;
         [SerializeField] private float dragThresholdY;
         [SerializeField] private RectTransform brickRect;
+        [SerializeField] private Transform raycastOrigin;
 
         private ScrollRect _parentScrollRect;
+        private RaycastHit2D _hit;
         private float _startPositionY;
         private bool _isDraggingBegan;
         private bool _canDrag;
         
-        private Transform _foundationTransform;
+        public RectTransform BrickRect => brickRect;
+        public RaycastHit2D Hit => _hit;
 
-        public void Setup(Sprite brickSprite, ScrollRect scrollRect, Transform foundationTransform)
+        public void Setup(Sprite brickSprite, ScrollRect scrollRect)
         {
             brickImage.sprite = brickSprite;
             _parentScrollRect = scrollRect;
-            _foundationTransform = foundationTransform;
         }
         
         public void OnPointerDown(PointerEventData eventData)
         {
             _parentScrollRect.OnBeginDrag(eventData);
         }
-
+        
         public void OnPointerUp(PointerEventData eventData)
         {
+            _isDraggingBegan = false;
             _parentScrollRect.OnEndDrag(eventData);
-            brickRect.DOMoveY(_foundationTransform.position.y + 20, 0.2f);
+            PointerUp?.Invoke(this);
         }
         
         public void OnBeginDrag(PointerEventData eventData)
@@ -56,11 +60,6 @@ namespace Bricks
             transform.position = eventData.position;
         }
 
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            _isDraggingBegan = false;
-        }
-
         private void Update()
         {
             if (!_isDraggingBegan)
@@ -70,6 +69,33 @@ namespace Bricks
             {
                 _canDrag = true;
                 OnDragBegan?.Invoke(this);
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            if (_canDrag)
+            {
+                var results = Physics2D.RaycastAll(raycastOrigin.position,
+                    -raycastOrigin.transform.up, Mathf.Infinity, LayerMask.GetMask("Brick"));
+                
+                Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
+
+                if (results != null && results.Length > 0)
+                {
+                    if (results[0].collider != null && results[0].collider.gameObject != gameObject)
+                    {
+                        _hit = results[0];
+                        Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
+                        return;
+                    }
+                
+                    if (results.Length > 1 && results[1].collider != null && results[1].collider.gameObject != gameObject)
+                    {
+                        _hit = results[1];
+                        Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
+                    }
+                }
             }
         }
     }
