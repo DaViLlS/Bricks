@@ -62,7 +62,12 @@ namespace Bricks
                 return;
             }
             
-            transform.position = eventData.position;
+            UpdatePosition(eventData.position);
+        }
+        
+        private void UpdatePosition(Vector2 newPosition)
+        {
+            transform.position = newPosition;
         }
         
         private void HandleDragEnd(PointerEventData eventData)
@@ -75,13 +80,18 @@ namespace Bricks
                 Destroy(gameObject);
                 return;
             }
-    
+
+            HandleBrickPlacement();
+        }
+
+        private void HandleBrickPlacement()
+        {
             if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
             {
                 MoveBrickToPosition(hitBrick.transform.position.y + 165);
                 return;
             }
-    
+
             MoveBrickToPosition(_hit.point.y);
         }
         
@@ -122,32 +132,42 @@ namespace Bricks
                 Destroy(gameObject);
             }
         }
-
+        
         private void Update()
         {
             if (!_isDraggingBegan)
                 return;
 
-            if (!(Input.mousePosition.y - _startPositionY > dragThresholdY))
-                return;
-            
-            _canDrag = true;
-            OnDragBegan?.Invoke(this);
+            CheckDragThreshold();
         }
 
         private void FixedUpdate()
         {
             if (!_canDrag)
                 return;
-            
+
+            PerformRaycast();
+        }
+        
+        private void CheckDragThreshold()
+        {
+            if (Input.mousePosition.y - _startPositionY > dragThresholdY)
+            {
+                _canDrag = true;
+                OnDragBegan?.Invoke(this);
+            }
+        }
+        
+        private void PerformRaycast()
+        {
             var hit = Physics2D.Raycast(raycastOrigin.position,
                 -raycastOrigin.transform.up, Mathf.Infinity,
                 LayerMask.GetMask("Brick", "Foundation", "Hole"));
-                
-            Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
-
+            
             if (hit.collider != null && hit.collider.gameObject != gameObject)
                 _hit = hit;
+                
+            Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
         }
     }
 }
