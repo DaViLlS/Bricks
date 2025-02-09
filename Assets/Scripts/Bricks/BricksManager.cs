@@ -17,12 +17,14 @@ namespace Bricks
         [SerializeField] private List<BrickColorPair> brickColorPairs;
         
         private BrickConfiguration _brickConfiguration;
+        private IInstantiator _instantiator;
         private Brick[] _bricks;
 
         [Inject]
-        public void Construct(BrickConfiguration brickConfiguration)
+        public void Construct(BrickConfiguration brickConfiguration, IInstantiator instantiator)
         {
             _brickConfiguration = brickConfiguration;
+            _instantiator = instantiator;
         }
 
         private void Awake()
@@ -44,8 +46,8 @@ namespace Bricks
                     Debug.LogError($"Brick Color {brickColor} not found");
                     continue;
                 }
-                
-                _bricks[i] = Instantiate(brickPrefab, bricksListContainer);
+
+                _bricks[i] = _instantiator.InstantiatePrefabForComponent<Brick>(brickPrefab, bricksListContainer);
                 _bricks[i].Setup(brickSpriteColorPair.brickSprite, scrollRect);
                 _bricks[i].OnDragBegan += OnBrickBeginDrag;
             }

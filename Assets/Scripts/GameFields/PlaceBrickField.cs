@@ -11,6 +11,8 @@ namespace GameFields
         
         private List<Brick> _bricks;
         private Brick _topBrick;
+        
+        public List<Brick> Bricks => _bricks;
 
         private void Awake()
         {
@@ -21,7 +23,6 @@ namespace GameFields
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                brick.PointerUp += OnPointerUp;
                 _bricks.Add(brick);
             }
         }
@@ -30,20 +31,8 @@ namespace GameFields
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                brick.PointerUp -= OnPointerUp;
                 _bricks.Remove(brick);
             }
-        }
-
-        private void OnPointerUp(Brick brick)
-        {
-            if (brick.Hit.collider != null && brick.Hit.collider.TryGetComponent<Brick>(out var hitBrick))
-            {
-                brick.BrickRect.DOMoveY(hitBrick.transform.position.y + 165, 0.2f);
-                return;
-            }
-            
-            brick.BrickRect.DOMoveY(foundationTransform.position.y + 20, 0.2f);
         }
     }
 }
