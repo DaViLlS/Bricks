@@ -18,6 +18,7 @@ namespace Bricks
         [SerializeField] private Transform raycastOrigin;
 
         private PlaceBrickField _placeBrickField;
+        private DropBrickField _dropBrickField;
         private ScrollRect _parentScrollRect;
         private RaycastHit2D _hit;
         private float _startPositionY;
@@ -25,9 +26,10 @@ namespace Bricks
         private bool _canDrag;
 
         [Inject]
-        private void Construct(PlaceBrickField placeBrickField)
+        private void Construct(PlaceBrickField placeBrickField, DropBrickField dropBrickField)
         {
             _placeBrickField = placeBrickField;
+            _dropBrickField = dropBrickField;
         }
 
         public void Setup(Sprite brickSprite, ScrollRect scrollRect)
@@ -38,45 +40,7 @@ namespace Bricks
         
         public void OnPointerUp(PointerEventData eventData)
         {
-            _isDraggingBegan = false;
-            _parentScrollRect.OnEndDrag(eventData);
-
-            if (!_placeBrickField.Bricks.Contains(this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
-            {
-                brickRect.DOMoveY(hitBrick.transform.position.y + 165, 0.2f).OnComplete(OnBrickFallenOnBrick);
-                return;
-            }
-            
-            brickRect.DOMoveY(_hit.point.y, 0.2f).OnComplete(OnBrickFallenOnFloor);
-        }
-
-        private void OnBrickFallenOnBrick()
-        {
-            foreach (var brick in _placeBrickField.Bricks)
-            {
-                if (brick == this)
-                    continue;
-                
-                if (brick.transform.position.y > transform.position.y || Mathf.Approximately(brick.transform.position.y, transform.position.y))
-                {
-                    Destroy(gameObject);
-                    break;
-                }
-            }
-        }
-
-        private void OnBrickFallenOnFloor()
-        {
-            if (_placeBrickField.Bricks.Count > 1)
-            {
-                Destroy(gameObject);
-            }
+            HandleDragEnd(eventData);
         }
         
         public void OnPointerDown(PointerEventData eventData)
@@ -100,6 +64,64 @@ namespace Bricks
             
             transform.position = eventData.position;
         }
+        
+        private void HandleDragEnd(PointerEventData eventData)
+        {
+            _isDraggingBegan = false;
+            _parentScrollRect.OnEndDrag(eventData);
+
+            if (!_placeBrickField.Bricks.Contains(this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+    
+            if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
+            {
+                MoveBrickToPosition(hitBrick.transform.position.y + 165);
+                return;
+            }
+    
+            MoveBrickToPosition(_hit.point.y);
+        }
+        
+        private void MoveBrickToPosition(float targetY)
+        {
+            brickRect.DOMoveY(targetY, 0.2f).OnComplete(() =>
+            {
+                if (Mathf.Approximately(targetY, _hit.point.y))
+                {
+                    OnBrickFallenOnFloor();
+                }
+                else
+                {
+                    OnBrickFallenOnBrick();
+                }
+            });
+        }
+
+        private void OnBrickFallenOnBrick()
+        {
+            foreach (var brick in _placeBrickField.Bricks)
+            {
+                if (brick == this)
+                    continue;
+        
+                if (brick.transform.position.y >= transform.position.y)
+                {
+                    Destroy(gameObject);
+                    break;
+                }
+            }
+        }
+
+        private void OnBrickFallenOnFloor()
+        {
+            if (_placeBrickField.Bricks.Count > 1)
+            {
+                Destroy(gameObject);
+            }
+        }
 
         private void Update()
         {
@@ -119,7 +141,8 @@ namespace Bricks
                 return;
             
             var hit = Physics2D.Raycast(raycastOrigin.position,
-                -raycastOrigin.transform.up, Mathf.Infinity, LayerMask.GetMask("Brick"));
+                -raycastOrigin.transform.up, Mathf.Infinity,
+                LayerMask.GetMask("Brick", "Foundation", "Hole"));
                 
             Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
 

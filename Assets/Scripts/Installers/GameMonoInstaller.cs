@@ -9,11 +9,12 @@ namespace Installers
     {
         [SerializeField] private BrickSo brickSo;
         [SerializeField] private PlaceBrickField placeBrickField;
+        [SerializeField] private DropBrickField dropBrickField;
 
         public override void InstallBindings()
         {
             BindBrickConfig();
-            BindPlaceBrickField();
+            BindFields();
         }
 
         private void BindBrickConfig()
@@ -22,9 +23,10 @@ namespace Installers
             Container.Bind<BrickConfiguration>().To<BrickSoConfiguration>().FromInstance(brickConfiguration).AsSingle();
         }
 
-        private void BindPlaceBrickField()
+        private void BindFields()
         {
             Container.Bind<PlaceBrickField>().FromInstance(placeBrickField).AsSingle();
+            Container.Bind<DropBrickField>().FromInstance(dropBrickField).AsSingle();
         }
     }
 }
