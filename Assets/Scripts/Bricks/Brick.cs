@@ -158,7 +158,7 @@ namespace Bricks
 
         private void FixedUpdate()
         {
-            if (!_canDrag)
+            if (!_canDrag && !_isDraggingBegan)
                 return;
 
             PerformRaycast();
