@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
+using Random = UnityEngine.Random;
 
 namespace Bricks
 {
@@ -16,11 +17,18 @@ namespace Bricks
         [SerializeField] private float dragThresholdY;
         [SerializeField] private RectTransform brickRect;
         [SerializeField] private Transform raycastOrigin;
+        [Header("Animation")]
+        [SerializeField] private float jumpIncreaseValue;
+        [SerializeField] private float jumpAnimationDuration = 0.2f;
+        [SerializeField] private float fallAnimationDuration = 0.2f;
 
         private PlaceBrickField _placeBrickField;
         private DropBrickField _dropBrickField;
+        
         private ScrollRect _parentScrollRect;
         private RaycastHit2D _hit;
+        private Vector2 _placePosition;
+        
         private float _startPositionY;
         private bool _isDraggingBegan;
         private bool _canDrag;
@@ -75,7 +83,7 @@ namespace Bricks
             _isDraggingBegan = false;
             _parentScrollRect.OnEndDrag(eventData);
 
-            if (!_placeBrickField.Bricks.Contains(this))
+            if (!_placeBrickField.Bricks.Contains(this) && !_dropBrickField.Bricks.Contains(this))
             {
                 Destroy(gameObject);
                 return;
@@ -88,25 +96,20 @@ namespace Bricks
         {
             if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
             {
-                MoveBrickToPosition(hitBrick.transform.position.y + 165);
+                _placePosition = hitBrick.transform.position;
+                MoveBrickToPosition(_placePosition.y + 165, OnBrickFallenOnBrick);
                 return;
             }
 
-            MoveBrickToPosition(_hit.point.y);
+            _placePosition = _hit.point;
+            MoveBrickToPosition(_placePosition.y, OnBrickFallenOnFloor);
         }
         
-        private void MoveBrickToPosition(float targetY)
+        private void MoveBrickToPosition(float targetY, Action action)
         {
             brickRect.DOMoveY(targetY, 0.2f).OnComplete(() =>
             {
-                if (Mathf.Approximately(targetY, _hit.point.y))
-                {
-                    OnBrickFallenOnFloor();
-                }
-                else
-                {
-                    OnBrickFallenOnBrick();
-                }
+                action?.Invoke();
             });
         }
 
@@ -117,12 +120,24 @@ namespace Bricks
                 if (brick == this)
                     continue;
         
-                if (brick.transform.position.y >= transform.position.y)
+                if (brick.transform.position.y >= transform.position.y || Mathf.Approximately(transform.position.y, _hit.point.y))
                 {
                     Destroy(gameObject);
-                    break;
+                    return;
                 }
             }
+            
+            AnimatePlacement();
+        }
+
+        private void AnimatePlacement()
+        {
+            brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue, jumpAnimationDuration)
+                .OnComplete(() =>
+                {
+                    var randomPositionX = Random.Range(-165 / 2, 165 / 2);
+                    brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + 165), fallAnimationDuration);
+                });
         }
 
         private void OnBrickFallenOnFloor()

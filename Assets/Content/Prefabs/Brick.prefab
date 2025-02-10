@@ -101,6 +101,9 @@ MonoBehaviour:
   dragThresholdY: 50
   brickRect: {fileID: 3885618890249204631}
   raycastOrigin: {fileID: 3707897891977493038}
+  jumpIncreaseValue: 100
+  jumpAnimationDuration: 0.1
+  fallAnimationDuration: 0.2
 --- !u!114 &8472623908684981939
 MonoBehaviour:
   m_ObjectHideFlags: 0
