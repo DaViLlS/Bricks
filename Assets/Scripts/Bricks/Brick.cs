@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Configuration.Brick;
 using DG.Tweening;
 using GameFields;
 using UnityEngine;
@@ -12,6 +14,7 @@ namespace Bricks
     public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
         public event Action<Brick> OnDragBegan;
+        public event Action<Brick> OnBrickDestroyed;
 
         [SerializeField] private Image brickImage;
         [SerializeField] private float dragThresholdY;
@@ -25,13 +28,26 @@ namespace Bricks
         private PlaceBrickField _placeBrickField;
         private DropBrickField _dropBrickField;
         
+        private Tween _tween;
+        private BrickColor _brickColor;
         private ScrollRect _parentScrollRect;
         private RaycastHit2D _hit;
         private Vector2 _placePosition;
+        private Vector2 _brickPosition;
         
         private float _startPositionY;
+        private bool _belongsToPlaceField;
+        private bool _belongsToDropField;
         private bool _isDraggingBegan;
         private bool _canDrag;
+        private bool _reachedDragThreshold;
+
+        private float BrickHeight => brickRect.rect.height * 2;
+        private float BrickWidth => brickRect.rect.width * 2;
+        
+        public BrickColor BrickColor => _brickColor;
+        public bool BelongsToPlaceField => _belongsToPlaceField;
+        public bool BelongsToDropField => _belongsToDropField;
 
         [Inject]
         private void Construct(PlaceBrickField placeBrickField, DropBrickField dropBrickField)
@@ -40,10 +56,11 @@ namespace Bricks
             _dropBrickField = dropBrickField;
         }
 
-        public void Setup(Sprite brickSprite, ScrollRect scrollRect)
+        public void Setup(BrickColor brickColor, Sprite brickSprite, ScrollRect scrollRect)
         {
             brickImage.sprite = brickSprite;
             _parentScrollRect = scrollRect;
+            _brickColor = brickColor;
         }
         
         public void OnPointerUp(PointerEventData eventData)
@@ -71,6 +88,15 @@ namespace Bricks
             }
             
             UpdatePosition(eventData.position);
+        } 
+
+        public void Fall(Brick brick)
+        {
+            if (Vector2.Distance(transform.position, brick.transform.position) >= BrickHeight * 2)
+            {
+                _placePosition = brick.transform.position;
+                MoveBrickToPosition(_placePosition.y + BrickHeight, AnimatePlacement);
+            }
         }
         
         private void UpdatePosition(Vector2 newPosition)
@@ -81,11 +107,18 @@ namespace Bricks
         private void HandleDragEnd(PointerEventData eventData)
         {
             _isDraggingBegan = false;
-            _parentScrollRect.OnEndDrag(eventData);
-
-            if (!_placeBrickField.Bricks.Contains(this) && !_dropBrickField.Bricks.Contains(this))
+            _belongsToPlaceField = _placeBrickField.Bricks.Contains(this);
+            _belongsToDropField = _dropBrickField.Bricks.Contains(this);
+            
+            if (!_canDrag)
             {
-                Destroy(gameObject);
+                _parentScrollRect.OnEndDrag(eventData);
+                return;
+            }
+            
+            if (!_belongsToPlaceField && !_belongsToDropField)
+            {
+                DestroyBrick();
                 return;
             }
 
@@ -97,7 +130,7 @@ namespace Bricks
             if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
             {
                 _placePosition = hitBrick.transform.position;
-                MoveBrickToPosition(_placePosition.y + 165, OnBrickFallenOnBrick);
+                MoveBrickToPosition(_placePosition.y + BrickHeight, OnBrickFallenOnBrick);
                 return;
             }
 
@@ -107,7 +140,7 @@ namespace Bricks
         
         private void MoveBrickToPosition(float targetY, Action action)
         {
-            brickRect.DOMoveY(targetY, 0.2f).OnComplete(() =>
+            _tween = brickRect.DOMoveY(targetY, 0.2f).OnComplete(() =>
             {
                 action?.Invoke();
             });
@@ -120,32 +153,41 @@ namespace Bricks
                 if (brick == this)
                     continue;
         
-                if (brick.transform.position.y >= transform.position.y || Mathf.Approximately(transform.position.y, _hit.point.y))
+                if (brick.transform.position.y >= transform.position.y)
                 {
-                    Destroy(gameObject);
+                    transform.position = _brickPosition;
                     return;
                 }
             }
-            
+
             AnimatePlacement();
         }
 
         private void AnimatePlacement()
         {
-            brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue, jumpAnimationDuration)
-                .OnComplete(() =>
-                {
-                    var randomPositionX = Random.Range(-165 / 2, 165 / 2);
-                    brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + 165), fallAnimationDuration);
-                });
+            _tween = brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue,
+                    jumpAnimationDuration).OnComplete(PlaceBrickWithRandomOffset);
+        }
+
+        private void PlaceBrickWithRandomOffset()
+        {
+            var randomPositionX = Random.Range(-BrickWidth / 2, BrickWidth / 2);
+            _tween = brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
+            fallAnimationDuration).OnComplete(() => _brickPosition = transform.position);
         }
 
         private void OnBrickFallenOnFloor()
         {
             if (_placeBrickField.Bricks.Count > 1)
             {
-                Destroy(gameObject);
+                DestroyBrick();
             }
+        }
+
+        private void DestroyBrick()
+        {
+            OnBrickDestroyed?.Invoke(this);
+            Destroy(gameObject);
         }
         
         private void Update()
@@ -159,16 +201,17 @@ namespace Bricks
         private void FixedUpdate()
         {
             if (!_canDrag && !_isDraggingBegan)
-                return;
+                return; 
 
             PerformRaycast();
         }
         
         private void CheckDragThreshold()
         {
-            if (Input.mousePosition.y - _startPositionY > dragThresholdY)
+            if (!_reachedDragThreshold && Input.mousePosition.y - _startPositionY > dragThresholdY)
             {
                 _canDrag = true;
+                _reachedDragThreshold = true;
                 OnDragBegan?.Invoke(this);
             }
         }
@@ -183,6 +226,11 @@ namespace Bricks
                 _hit = hit;
                 
             Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
+        }
+
+        private void OnDestroy()
+        {
+            _tween?.Kill();
         }
     }
 }

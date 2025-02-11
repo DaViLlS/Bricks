@@ -47,15 +47,40 @@ namespace Bricks
                     continue;
                 }
 
-                _bricks[i] = _instantiator.InstantiatePrefabForComponent<Brick>(brickPrefab, bricksListContainer);
-                _bricks[i].Setup(brickSpriteColorPair.brickSprite, scrollRect);
-                _bricks[i].OnDragBegan += OnBrickBeginDrag;
+                CreateBrick(i, brickColor, brickSpriteColorPair.brickSprite);
             }
         }
         
         private void OnBrickBeginDrag(Brick brick)
         {
             brick.transform.SetParent(bricksContainer);
+            var brickSpriteColorPair = brickColorPairs.FirstOrDefault(x => x.brickColor == brick.BrickColor);
+            var brickIndex = 0;
+
+            for (int i = 0; i < _bricks.Length; i++)
+            {
+                if (_bricks[i] == brick)
+                {
+                    brickIndex = i;
+                    break;
+                }
+            }
+
+            CreateBrick(brickIndex, brick.BrickColor, brickSpriteColorPair.brickSprite);
+        }
+
+        private void OnBrickDestroyed(Brick destroyedBrick)
+        {
+            destroyedBrick.OnDragBegan -= OnBrickBeginDrag;
+            destroyedBrick.OnBrickDestroyed -= OnBrickDestroyed;
+        }
+
+        private void CreateBrick(int brickIndex, BrickColor brickColor, Sprite brickSprite)
+        {
+            _bricks[brickIndex] = _instantiator.InstantiatePrefabForComponent<Brick>(brickPrefab, bricksListContainer);
+            _bricks[brickIndex].Setup(brickColor, brickSprite, scrollRect);
+            _bricks[brickIndex].OnDragBegan += OnBrickBeginDrag;
+            _bricks[brickIndex].OnBrickDestroyed += OnBrickDestroyed;
         }
     }
 
