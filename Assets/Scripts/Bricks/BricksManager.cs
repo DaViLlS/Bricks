@@ -31,11 +31,6 @@ namespace Bricks
 
         private void Awake()
         {
-            Initialize();
-        }
-
-        public void Initialize()
-        {
             _bricks = new Brick[_brickConfiguration.Bricks.Count];
 
             for (int i = 0; i < _bricks.Length; i++)
