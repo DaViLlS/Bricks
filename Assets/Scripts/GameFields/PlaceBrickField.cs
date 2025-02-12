@@ -10,16 +10,6 @@ namespace GameFields
         
         private Coroutine _fallRoutine;
 
-        protected override void BrickTriggeredField(Brick brick)
-        {
-            
-        }
-
-        protected override void BrickExitFromField(Brick brick)
-        {
-            
-        }
-
         protected override void OnBrickDestroyed(Brick destroyedBrick)
         {
             Bricks.Remove(destroyedBrick);

@@ -141,7 +141,13 @@ namespace Bricks
         {
             if (_hit.collider.CompareTag("Hole"))
             {
-                MoveBrickToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, DestroyBrick);
+                _dropBrickField.EnableHole();
+                
+                MoveBrickToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, () =>
+                {
+                    DestroyBrick();
+                    _dropBrickField.DisableHole();
+                });
             }
             else if (_brickPosition != Vector2.zero)
             {

@@ -28,7 +28,6 @@ namespace GameFields
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                BrickTriggeredField(brick);
                 _bricks.Add(brick);
             }
         }
@@ -37,13 +36,10 @@ namespace GameFields
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                BrickExitFromField(brick);
                 _bricks.Remove(brick);
             }
         }
-
-        protected abstract void BrickTriggeredField(Brick brick);
-        protected abstract void BrickExitFromField(Brick brick);
+        
         protected abstract void OnBrickDestroyed(Brick destroyedBrick);
     }
 }

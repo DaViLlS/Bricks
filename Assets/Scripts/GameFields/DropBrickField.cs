@@ -10,12 +10,12 @@ namespace GameFields
         
         public Transform DropBrickTarget => dropBrickTarget;
 
-        protected override void BrickTriggeredField(Brick brick)
+        public void EnableHole()
         {
             holeForward.SetActive(true);
         }
 
-        protected override void BrickExitFromField(Brick brick)
+        public void DisableHole()
         {
             holeForward.SetActive(false);
         }
