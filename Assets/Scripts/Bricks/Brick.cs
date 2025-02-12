@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Configuration.Brick;
 using DG.Tweening;
 using GameFields;
@@ -36,18 +35,21 @@ namespace Bricks
         private Vector2 _brickPosition;
         
         private float _startPositionY;
+
+        private bool _isAnimating;
         private bool _belongsToPlaceField;
         private bool _belongsToDropField;
         private bool _isDraggingBegan;
-        private bool _canDrag;
         private bool _reachedDragThreshold;
-
-        private float BrickHeight => brickRect.rect.height * 2;
+        private bool _isPlaced;
+        
         private float BrickWidth => brickRect.rect.width * 2;
         
         public BrickColor BrickColor => _brickColor;
         public bool BelongsToPlaceField => _belongsToPlaceField;
         public bool BelongsToDropField => _belongsToDropField;
+        public bool IsPlaced => _isPlaced;
+        public float BrickHeight => brickRect.rect.height * 2;
 
         [Inject]
         private void Construct(PlaceBrickField placeBrickField, DropBrickField dropBrickField)
@@ -58,6 +60,7 @@ namespace Bricks
 
         public void Setup(BrickColor brickColor, Sprite brickSprite, ScrollRect scrollRect)
         {
+            _brickPosition = Vector2.zero;
             brickImage.sprite = brickSprite;
             _parentScrollRect = scrollRect;
             _brickColor = brickColor;
@@ -65,6 +68,9 @@ namespace Bricks
         
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (_isAnimating)
+                return;
+            
             HandleDragEnd(eventData);
         }
         
@@ -75,33 +81,32 @@ namespace Bricks
         
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (_isAnimating)
+                return;
+            
             _startPositionY = Input.mousePosition.y;
             _isDraggingBegan = true;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!_canDrag)
+            if (_isAnimating)
+                return;
+            
+            if (!_reachedDragThreshold)
             {
                 _parentScrollRect.OnDrag(eventData);
                 return;
             }
-            
-            UpdatePosition(eventData.position);
+
+            transform.position = eventData.position;
         } 
 
         public void Fall(Brick brick)
         {
-            if (Vector2.Distance(transform.position, brick.transform.position) >= BrickHeight * 2)
-            {
-                _placePosition = brick.transform.position;
-                MoveBrickToPosition(_placePosition.y + BrickHeight, AnimatePlacement);
-            }
-        }
-        
-        private void UpdatePosition(Vector2 newPosition)
-        {
-            transform.position = newPosition;
+            _placePosition = brick.transform.position;
+            
+            MoveBrickToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, AnimatePlacement);
         }
         
         private void HandleDragEnd(PointerEventData eventData)
@@ -110,7 +115,7 @@ namespace Bricks
             _belongsToPlaceField = _placeBrickField.Bricks.Contains(this);
             _belongsToDropField = _dropBrickField.Bricks.Contains(this);
             
-            if (!_canDrag)
+            if (!_reachedDragThreshold)
             {
                 _parentScrollRect.OnEndDrag(eventData);
                 return;
@@ -122,26 +127,59 @@ namespace Bricks
                 return;
             }
 
-            HandleBrickPlacement();
+            if (_belongsToDropField)
+            {
+                DropBrickInHole();
+            }
+            else if (_belongsToPlaceField)
+            {
+                HandleBrickPlacement();
+            }
+        }
+
+        private void DropBrickInHole()
+        {
+            if (_hit.collider.CompareTag("Hole"))
+            {
+                MoveBrickToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, DestroyBrick);
+            }
+            else if (_brickPosition != Vector2.zero)
+            {
+                transform.position = _brickPosition;
+            }
+            else
+            {
+                DestroyBrick();
+            }
         }
 
         private void HandleBrickPlacement()
         {
             if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
             {
+                if (!hitBrick.IsPlaced)
+                {
+                    DestroyBrick();
+                    return;
+                }
+                
                 _placePosition = hitBrick.transform.position;
-                MoveBrickToPosition(_placePosition.y + BrickHeight, OnBrickFallenOnBrick);
+                MoveBrickToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, OnBrickFallenOnBrick);
                 return;
             }
 
             _placePosition = _hit.point;
-            MoveBrickToPosition(_placePosition.y, OnBrickFallenOnFloor);
+            MoveBrickToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, OnBrickFallenOnFloor);
         }
         
-        private void MoveBrickToPosition(float targetY, Action action)
+        private void MoveBrickToPosition(Vector2 target, float duration, Action action = null)
         {
-            _tween = brickRect.DOMoveY(targetY, 0.2f).OnComplete(() =>
+            _isAnimating = true;
+            _isPlaced = false;
+            
+            _tween = brickRect.DOMove(target, duration).OnComplete(() =>
             {
+                _isAnimating = false;
                 action?.Invoke();
             });
         }
@@ -162,26 +200,44 @@ namespace Bricks
 
             AnimatePlacement();
         }
-
-        private void AnimatePlacement()
-        {
-            _tween = brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue,
-                    jumpAnimationDuration).OnComplete(PlaceBrickWithRandomOffset);
-        }
-
-        private void PlaceBrickWithRandomOffset()
-        {
-            var randomPositionX = Random.Range(-BrickWidth / 2, BrickWidth / 2);
-            _tween = brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
-            fallAnimationDuration).OnComplete(() => _brickPosition = transform.position);
-        }
-
+        
         private void OnBrickFallenOnFloor()
         {
             if (_placeBrickField.Bricks.Count > 1)
             {
-                DestroyBrick();
+                if (_brickPosition == Vector2.zero)
+                {
+                    DestroyBrick();
+                }
+                else
+                {
+                    transform.position = _brickPosition;
+                }
+                
+                return;
             }
+
+            _isPlaced = true;
+        }
+        
+        private void AnimatePlacement()
+        {
+            _isAnimating = true;
+            _tween = brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue,
+                jumpAnimationDuration).OnComplete(PlaceBrickWithRandomOffset);
+        }
+
+        private void PlaceBrickWithRandomOffset()
+        {
+            _isAnimating = true;
+            var randomPositionX = Random.Range(-BrickWidth / 2, BrickWidth / 2);
+            _tween = brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
+            fallAnimationDuration).OnComplete(() =>
+            {
+                _isAnimating = false;
+                _isPlaced = true;
+                _brickPosition = transform.position;
+            });
         }
 
         private void DestroyBrick()
@@ -200,7 +256,7 @@ namespace Bricks
 
         private void FixedUpdate()
         {
-            if (!_canDrag && !_isDraggingBegan)
+            if (!_reachedDragThreshold && !_isDraggingBegan)
                 return; 
 
             PerformRaycast();
@@ -210,7 +266,6 @@ namespace Bricks
         {
             if (!_reachedDragThreshold && Input.mousePosition.y - _startPositionY > dragThresholdY)
             {
-                _canDrag = true;
                 _reachedDragThreshold = true;
                 OnDragBegan?.Invoke(this);
             }

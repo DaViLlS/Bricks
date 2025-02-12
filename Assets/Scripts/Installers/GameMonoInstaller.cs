@@ -1,4 +1,5 @@
-﻿using Configuration.Brick;
+﻿using Bricks;
+using Configuration.Brick;
 using GameFields;
 using UnityEngine;
 using Zenject;
@@ -10,11 +11,13 @@ namespace Installers
         [SerializeField] private BrickSo brickSo;
         [SerializeField] private PlaceBrickField placeBrickField;
         [SerializeField] private DropBrickField dropBrickField;
+        [SerializeField] private BricksManager bricksManager;
 
         public override void InstallBindings()
         {
             BindBrickConfig();
             BindFields();
+            BindBricksManager();
         }
 
         private void BindBrickConfig()
@@ -27,6 +30,11 @@ namespace Installers
         {
             Container.Bind<PlaceBrickField>().FromInstance(placeBrickField).AsSingle();
             Container.Bind<DropBrickField>().FromInstance(dropBrickField).AsSingle();
+        }
+
+        private void BindBricksManager()
+        {
+            Container.Bind<BricksManager>().FromInstance(bricksManager).AsSingle();
         }
     }
 }

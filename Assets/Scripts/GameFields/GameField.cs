@@ -1,24 +1,34 @@
 ﻿using System.Collections.Generic;
 using Bricks;
 using UnityEngine;
+using Zenject;
 
 namespace GameFields
 {
     public abstract class GameField : MonoBehaviour
     {
-        private List<Brick> _bricks;
-        public List<Brick> Bricks => _bricks;
+        protected List<Brick> _bricks;
+        protected BricksManager _bricksManager;
         
+        public List<Brick> Bricks => _bricks;
+
+        [Inject]
+        private void Construct(BricksManager bricksManager)
+        {
+            _bricksManager = bricksManager;
+        }
+
         private void Awake()
         {
             _bricks = new List<Brick>();
+            _bricksManager.OnBrickDestroyed += OnBrickDestroyed;
         }
-        
+
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                brick.OnBrickDestroyed += OnBrickDestroyed;
+                BrickTriggeredField(brick);
                 _bricks.Add(brick);
             }
         }
@@ -27,26 +37,13 @@ namespace GameFields
         {
             if (other.TryGetComponent<Brick>(out var brick))
             {
-                brick.OnBrickDestroyed -= OnBrickDestroyed;
+                BrickExitFromField(brick);
                 _bricks.Remove(brick);
             }
         }
 
-        private void OnBrickDestroyed(Brick destroyedBrick)
-        {
-            destroyedBrick.OnBrickDestroyed -= OnBrickDestroyed;
-            Bricks.Remove(destroyedBrick);
-            
-            if (destroyedBrick.BelongsToPlaceField)
-            {
-                for (var i = _bricks.Count - 1; i >= 0; i--)
-                {
-                    if (i - 1 < 0)
-                        continue;
-                    
-                    _bricks[i].Fall(_bricks[i - 1]);
-                }
-            }
-        }
+        protected abstract void BrickTriggeredField(Brick brick);
+        protected abstract void BrickExitFromField(Brick brick);
+        protected abstract void OnBrickDestroyed(Brick destroyedBrick);
     }
 }
