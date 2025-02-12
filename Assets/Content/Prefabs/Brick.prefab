@@ -46,6 +46,7 @@ GameObject:
   - component: {fileID: 3885618890249204631}
   - component: {fileID: 2758961860613193816}
   - component: {fileID: 583919428497267221}
+  - component: {fileID: 1884433181960418736}
   - component: {fileID: 8472623908684981939}
   - component: {fileID: 7211641300100500727}
   - component: {fileID: 7275230285911200494}
@@ -97,12 +98,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7471a20516b61f4a9747ee32b8889aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  brickAnimator: {fileID: 1884433181960418736}
   brickImage: {fileID: 7211641300100500727}
   dragThresholdY: 50
   brickRect: {fileID: 3885618890249204631}
   raycastOrigin: {fileID: 3707897891977493038}
-  jumpIncreaseValue: 100
-  jumpAnimationDuration: 0.1
+--- !u!114 &1884433181960418736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7484573177058148135}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7833ca015ee34eec8b5debc6eb88b126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jumpIncreaseValue: 50
+  jumpAnimationDuration: 0.2
   fallAnimationDuration: 0.2
 --- !u!114 &8472623908684981939
 MonoBehaviour:

@@ -123,7 +123,7 @@ namespace Bricks
 
             if (_belongsToDropField)
             {
-                DropBrickInHole();
+                DropInHole();
             }
             else if (_belongsToPlaceField)
             {
@@ -131,7 +131,7 @@ namespace Bricks
             }
         }
 
-        private void DropBrickInHole()
+        private void DropInHole()
         {
             if (_hit.collider.CompareTag("Hole"))
             {
