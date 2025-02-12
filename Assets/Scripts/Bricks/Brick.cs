@@ -151,7 +151,7 @@ namespace Bricks
             }
             else if (_brickPosition != Vector2.zero)
             {
-                transform.position = _brickPosition;
+                MoveBrickToPosition(_brickPosition, 0.1f);
             }
             else
             {
@@ -199,7 +199,7 @@ namespace Bricks
         
                 if (brick.transform.position.y >= transform.position.y)
                 {
-                    transform.position = _brickPosition;
+                    MoveBrickToPosition(_brickPosition, 0.1f);
                     return;
                 }
             }
@@ -217,7 +217,7 @@ namespace Bricks
                 }
                 else
                 {
-                    transform.position = _brickPosition;
+                    MoveBrickToPosition(_brickPosition, 0.1f);
                 }
                 
                 return;
@@ -237,6 +237,7 @@ namespace Bricks
         {
             _isAnimating = true;
             var randomPositionX = Random.Range(-BrickWidth / 2, BrickWidth / 2);
+            
             _tween = brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
             fallAnimationDuration).OnComplete(() =>
             {
