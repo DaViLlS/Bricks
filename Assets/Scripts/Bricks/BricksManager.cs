@@ -21,8 +21,6 @@ namespace Bricks
         private BrickConfiguration _brickConfiguration;
         private IInstantiator _instantiator;
         private Brick[] _bricks;
-        
-        public Transform BricksContainer => bricksContainer;
 
         [Inject]
         public void Construct(BrickConfiguration brickConfiguration, IInstantiator instantiator)

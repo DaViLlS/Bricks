@@ -15,19 +15,15 @@ namespace Bricks
         public event Action<Brick> OnDragBegan;
         public event Action<Brick> OnBrickDestroyed;
 
+        [SerializeField] private BrickAnimator brickAnimator;
         [SerializeField] private Image brickImage;
         [SerializeField] private float dragThresholdY;
         [SerializeField] private RectTransform brickRect;
         [SerializeField] private Transform raycastOrigin;
-        [Header("Animation")]
-        [SerializeField] private float jumpIncreaseValue;
-        [SerializeField] private float jumpAnimationDuration = 0.2f;
-        [SerializeField] private float fallAnimationDuration = 0.2f;
-
+        
         private PlaceBrickField _placeBrickField;
         private DropBrickField _dropBrickField;
         
-        private Tween _tween;
         private BrickColor _brickColor;
         private ScrollRect _parentScrollRect;
         private RaycastHit2D _hit;
@@ -36,7 +32,6 @@ namespace Bricks
         
         private float _mouseBeginDragPositionY;
 
-        private bool _isAnimating;
         private bool _belongsToPlaceField;
         private bool _belongsToDropField;
         private bool _isDraggingBegan;
@@ -68,12 +63,13 @@ namespace Bricks
         {
             _placePosition = brick.transform.position;
             
-            MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, AnimatePlacement);
+            _isPlaced = false;
+            brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, AnimatePlacement);
         }
         
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (_isAnimating)
+            if (brickAnimator.IsActive)
                 return;
             
             HandleDragEnd(eventData);
@@ -86,7 +82,7 @@ namespace Bricks
         
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (_isAnimating)
+            if (brickAnimator.IsActive)
                 return;
             
             _mouseBeginDragPositionY = Input.mousePosition.y;
@@ -95,7 +91,7 @@ namespace Bricks
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (_isAnimating)
+            if (brickAnimator.IsActive)
                 return;
             
             if (!_reachedDragThreshold)
@@ -141,7 +137,8 @@ namespace Bricks
             {
                 _dropBrickField.EnableHole();
                 
-                MoveToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, () =>
+                _isPlaced = false;
+                brickAnimator.MoveToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, () =>
                 {
                     DestroyBrick();
                     _dropBrickField.DisableHole();
@@ -149,7 +146,8 @@ namespace Bricks
             }
             else if (_brickPosition != Vector2.zero)
             {
-                MoveToPosition(_brickPosition, 0.1f);
+                _isPlaced = false;
+                brickAnimator.MoveToPosition(_brickPosition, 0.1f);
             }
             else
             {
@@ -168,24 +166,14 @@ namespace Bricks
                 }
                 
                 _placePosition = hitBrick.transform.position;
-                MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, OnFallenOnBrick);
+                _isPlaced = false;
+                brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, OnFallenOnBrick);
                 return;
             }
 
             _placePosition = _hit.point;
-            MoveToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, OnFallenOnFloor);
-        }
-        
-        private void MoveToPosition(Vector2 target, float duration, Action action = null)
-        {
-            _isAnimating = true;
             _isPlaced = false;
-            
-            _tween = brickRect.DOMove(target, duration).OnComplete(() =>
-            {
-                _isAnimating = false;
-                action?.Invoke();
-            });
+            brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, OnFallenOnFloor);
         }
 
         private void OnFallenOnBrick()
@@ -197,7 +185,8 @@ namespace Bricks
         
                 if (brick.transform.position.y >= transform.position.y)
                 {
-                    MoveToPosition(_brickPosition, 0.1f);
+                    _isPlaced = false;
+                    brickAnimator.MoveToPosition(_brickPosition, 0.1f);
                     return;
                 }
             }
@@ -219,28 +208,20 @@ namespace Bricks
                 return;
             }
            
-            MoveToPosition(_brickPosition, 0.1f);
+            _isPlaced = false;
+            brickAnimator.MoveToPosition(_brickPosition, 0.1f);
         }
         
         private void AnimatePlacement()
         {
-            _isAnimating = true;
-            _tween = brickRect.DOMoveY(brickRect.transform.position.y + Vector2.up.y * jumpIncreaseValue,
-                jumpAnimationDuration).OnComplete(PlaceWithRandomOffset);
-        }
-
-        private void PlaceWithRandomOffset()
-        {
-            _isAnimating = true;
             var randomPositionX = Random.Range(-BrickWidth / 2, BrickWidth / 2);
             
-            _tween = brickRect.DOMove(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
-            fallAnimationDuration).OnComplete(() =>
-            {
-                _isAnimating = false;
-                _isPlaced = true;
-                _brickPosition = transform.position;
-            });
+            brickAnimator.AnimatePlacementOnBrick(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
+                () =>
+                {
+                    _isPlaced = true;
+                    _brickPosition = transform.position;
+                });
         }
 
         private void DestroyBrick()
@@ -284,11 +265,6 @@ namespace Bricks
                 _hit = hit;
                 
             Debug.DrawLine(raycastOrigin.position, _hit.point, Color.red);
-        }
-
-        private void OnDestroy()
-        {
-            _tween?.Kill();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace GameFields
     public abstract class GameField : MonoBehaviour
     {
         protected List<Brick> _bricks;
-        protected BricksManager _bricksManager;
+        private BricksManager _bricksManager;
         
         public List<Brick> Bricks => _bricks;
 
