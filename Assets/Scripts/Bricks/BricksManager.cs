@@ -33,7 +33,7 @@ namespace Bricks
         {
             _bricks = new Brick[_brickConfiguration.Bricks.Count];
 
-            for (int i = 0; i < _bricks.Length; i++)
+            for (var i = 0; i < _bricks.Length; i++)
             {
                 var brickColor = _brickConfiguration.Bricks[i];
                 var brickSpriteColorPair = brickColorPairs.FirstOrDefault(x => x.brickColor == brickColor);
@@ -54,7 +54,7 @@ namespace Bricks
             var brickSpriteColorPair = brickColorPairs.FirstOrDefault(x => x.brickColor == brick.BrickColor);
             var brickIndex = 0;
 
-            for (int i = 0; i < _bricks.Length; i++)
+            for (var i = 0; i < _bricks.Length; i++)
             {
                 if (_bricks[i] == brick)
                 {
