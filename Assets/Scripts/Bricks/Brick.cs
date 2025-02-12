@@ -1,6 +1,5 @@
 using System;
 using Configuration.Brick;
-using DG.Tweening;
 using GameFields;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,6 +12,8 @@ namespace Bricks
     public class Brick : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
         public event Action<Brick> OnDragBegan;
+        public event Action OnBrickPlaced;
+        public event Action<Brick> OnBrickDroppedInHole;
         public event Action<Brick> OnBrickDestroyed;
 
         [SerializeField] private BrickAnimator brickAnimator;
@@ -58,10 +59,22 @@ namespace Bricks
             _parentScrollRect = scrollRect;
             _brickColor = brickColor;
         }
-        
-        public void Fall(Brick brick)
+
+        public void FallOnFloor(Vector2 position)
         {
-            _placePosition = brick.transform.position;
+            _placePosition = position;
+            
+            _isPlaced = false;
+            
+            brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, () =>
+            {
+                _isPlaced = true;
+            });
+        }
+        
+        public void FallOnBrick(Vector2 position)
+        {
+            _placePosition = position;
             
             _isPlaced = false;
             brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, AnimatePlacement);
@@ -140,7 +153,8 @@ namespace Bricks
                 _isPlaced = false;
                 brickAnimator.MoveToPosition(_dropBrickField.DropBrickTarget.position, 0.5f, () =>
                 {
-                    DestroyBrick();
+                    OnBrickDroppedInHole?.Invoke(this);
+                    Destroy(gameObject);
                     _dropBrickField.DisableHole();
                 });
             }
@@ -170,7 +184,7 @@ namespace Bricks
                 brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y + BrickHeight), 0.2f, OnFallenOnBrick);
                 return;
             }
-
+            
             _placePosition = _hit.point;
             _isPlaced = false;
             brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, OnFallenOnFloor);
@@ -198,6 +212,7 @@ namespace Bricks
         {
             if (_placeBrickField.Bricks.Count <= 1)
             {
+                OnBrickPlaced?.Invoke();
                 _isPlaced = true;
                 return;
             }
@@ -207,8 +222,7 @@ namespace Bricks
                 DestroyBrick();
                 return;
             }
-           
-            _isPlaced = false;
+            
             brickAnimator.MoveToPosition(_brickPosition, 0.1f);
         }
         
@@ -219,6 +233,7 @@ namespace Bricks
             brickAnimator.AnimatePlacementOnBrick(new Vector2(_placePosition.x + randomPositionX, _placePosition.y + BrickHeight),
                 () =>
                 {
+                    OnBrickPlaced?.Invoke();
                     _isPlaced = true;
                     _brickPosition = transform.position;
                 });
@@ -227,7 +242,10 @@ namespace Bricks
         private void DestroyBrick()
         {
             OnBrickDestroyed?.Invoke(this);
-            Destroy(gameObject);
+            brickAnimator.Hide(() =>
+            {
+                Destroy(gameObject);
+            });
         }
         
         private void Update()

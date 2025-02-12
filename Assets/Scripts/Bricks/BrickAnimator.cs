@@ -7,13 +7,22 @@ namespace Bricks
     public class BrickAnimator : MonoBehaviour
     {
         [SerializeField] private float jumpIncreaseValue;
-        [SerializeField] private float jumpAnimationDuration = 0.2f;
-        [SerializeField] private float fallAnimationDuration = 0.2f;
+        [SerializeField] private float jumpAnimationDuration;
+        [SerializeField] private float fallAnimationDuration;
+        [SerializeField] private float hideAnimationDuration;
 
         private Tween _tween;
         private bool _isActive;
 
         public bool IsActive => _isActive;
+
+        public void Hide(Action action)
+        {
+            transform.DOScale(0f, hideAnimationDuration).OnComplete(() =>
+            {
+                action?.Invoke();
+            });
+        }
         
         public void MoveToPosition(Vector2 target, float duration, Action action = null)
         {

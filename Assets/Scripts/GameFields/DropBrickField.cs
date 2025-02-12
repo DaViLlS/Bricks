@@ -24,5 +24,10 @@ namespace GameFields
         {
             
         }
+
+        protected override void OnBrickDroppedInHole(Brick destroyedBrick)
+        {
+            
+        }
     }
 }

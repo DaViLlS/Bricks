@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Bricks;
 using UnityEngine;
 using Zenject;
@@ -22,6 +23,7 @@ namespace GameFields
         {
             _bricks = new List<Brick>();
             _bricksManager.OnBrickDestroyed += OnBrickDestroyed;
+            _bricksManager.OnBrickDroppedInHole += OnBrickDroppedInHole;
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -39,7 +41,14 @@ namespace GameFields
                 _bricks.Remove(brick);
             }
         }
-        
+
+        private void OnDestroy()
+        {
+            _bricksManager.OnBrickDestroyed -= OnBrickDestroyed;
+            _bricksManager.OnBrickDroppedInHole -= OnBrickDroppedInHole;
+        }
+
         protected abstract void OnBrickDestroyed(Brick destroyedBrick);
+        protected abstract void OnBrickDroppedInHole(Brick destroyedBrick);
     }
 }
