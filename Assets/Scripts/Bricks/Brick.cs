@@ -43,6 +43,7 @@ namespace Bricks
         
         public BrickColor BrickColor => _brickColor;
         public bool IsPlaced => _isPlaced;
+        public bool ReachedDragThreshold => _reachedDragThreshold;
         public float BrickHeight => brickRect.rect.height * 2;
 
         [Inject]
@@ -68,6 +69,7 @@ namespace Bricks
             
             brickAnimator.MoveToPosition(new Vector2(transform.position.x, _placePosition.y), 0.2f, () =>
             {
+                _brickPosition = transform.position;
                 _isPlaced = true;
             });
         }
@@ -160,7 +162,6 @@ namespace Bricks
             }
             else if (_brickPosition != Vector2.zero)
             {
-                _isPlaced = false;
                 brickAnimator.MoveToPosition(_brickPosition, 0.1f);
             }
             else
@@ -171,7 +172,13 @@ namespace Bricks
 
         private void HandlePlacement()
         {
-            if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick))
+            if (_brickPosition != Vector2.zero)
+            {
+                brickAnimator.MoveToPosition(_brickPosition, 0.1f);
+                return;
+            }
+            
+            if (_hit.collider != null && _hit.collider.TryGetComponent<Brick>(out var hitBrick) && hitBrick.ReachedDragThreshold)
             {
                 if (!hitBrick.IsPlaced)
                 {
@@ -212,8 +219,9 @@ namespace Bricks
         {
             if (_placeBrickField.Bricks.Count <= 1)
             {
-                OnBrickPlaced?.Invoke();
                 _isPlaced = true;
+                _brickPosition = transform.position;
+                OnBrickPlaced?.Invoke();
                 return;
             }
             
